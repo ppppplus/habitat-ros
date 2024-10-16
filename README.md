@@ -1,7 +1,5 @@
-
-# habitat_mav_sim_node&habitat_node
 # Habitat-ROS
-Forked from https://github.com/smartroboticslab/habitat-ros.git
+Forked from https://github.com/smartroboticslab/habitat-ros.git.
 A ROS wrapper for
 [Habitat-Sim](https://github.com/facebookresearch/habitat-sim). It allows
 getting RGB, depth and semantic renders from ROS. It also contains a simplified
