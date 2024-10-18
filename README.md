@@ -1,6 +1,6 @@
 # Habitat-ROS
 Forked from https://github.com/smartroboticslab/habitat-ros.git.
-A ROS wrapper for[Habitat-Sim](https://github.com/facebookresearch/habitat-sim). It allows getting RGB, depth and semantic renders from ROS. It also contains a simplified MAV simulator. It can load Replica Dataset and publish the RGB-D and tf.
+A ROS wrapper for [Habitat-Sim](https://github.com/facebookresearch/habitat-sim). It allows getting RGB, depth and semantic renders from ROS. It also contains a simplified MAV simulator. It can load Replica Dataset and publish the RGB-D and tf.
 
 ## Build
 

@@ -166,18 +166,18 @@ def wait_for_key(window) -> Tuple[Movement, bool]:
             elif key == "e":
                 m = Movement(yaw=-1)
                 break
-            elif key == "f":
-                m = Movement(pitch=1)
-                break
-            elif key == "r":
-                m = Movement(pitch=-1)
-                break
-            elif key == "x":
-                m = Movement(roll=1)
-                break
-            elif key == "z":
-                m = Movement(roll=-1)
-                break
+            # elif key == "f":
+            #     m = Movement(pitch=1)
+            #     break
+            # elif key == "r":
+            #     m = Movement(pitch=-1)
+            #     break
+            # elif key == "x":
+            #     m = Movement(roll=1)
+            #     break
+            # elif key == "z":
+            #     m = Movement(roll=-1)
+            #     break
             time.sleep(0.05)
     finally:
         curses.endwin()
@@ -199,8 +199,8 @@ def print_help(window) -> None:
     window.addstr(6,  0, "a/d       left/right")
     window.addstr(7,  0, "space/c   up/down")
     window.addstr(8,  0, "q/e       yaw left/right")
-    window.addstr(9,  0, "r/f       pitch up/down")
-    window.addstr(10, 0, "z/x       roll CCW/CW")
+    # window.addstr(9,  0, "r/f       pitch up/down")
+    # window.addstr(10, 0, "z/x       roll CCW/CW")
     window.addstr(11, 0, "Q         quit")
 
 

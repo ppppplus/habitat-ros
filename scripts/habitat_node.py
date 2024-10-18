@@ -295,7 +295,6 @@ class HabitatROSNode:
         if self.config["fps"] > 0:
             rate = rospy.Rate(self.config["fps"])
         while not rospy.is_shutdown():
-            
             # Move, observe and publish
             observation = self._move_and_render(self.sim, self.config)
             self._publish_observation(observation, self.pub, self.config)
@@ -378,7 +377,8 @@ class HabitatROSNode:
             rospy.loginfo("Get initial agent pose from the simulator")
         else:
             self.T_HB = config["initial_T_HB"]
-            t_IC, q_IC = split_pose(self._T_HB_to_T_IC(self.T_HB))
+            # t_IC, q_IC = split_pose(self._T_HB_to_T_IC(self.T_HB))
+            t_IC, q_IC = split_pose(self.T_HB)
             agent_state = hs.agent.AgentState(t_IC, q_IC)
             agent.set_state(agent_state)
             rospy.loginfo("Get initial agent pose from the parameter server")
@@ -519,6 +519,7 @@ class HabitatROSNode:
         # print("trying to get tf from {} to habitat".format(pose.header.frame_id))
         # T_HE = find_tf(self.tf_buffer, "habitat", pose.header.frame_id) # 这里pose.header.frame_id为“world”
         # Transform the pose
+        # print("get pose:", pose.pose)
         T_EB = msg_to_pose(pose.pose)
         T_HB = T_EB
         # Update the pose
@@ -700,8 +701,11 @@ class HabitatROSNode:
         self.T_HB_mutex.release()
         # print("THB mutex required end")
         # Move the sensor to the pose contained in self.T_HB.
+        # print("T_HB received:", T_HB)
         t_IC, q_IC = split_pose(self._T_HB_to_T_IC(T_HB))
+        # t_IC, q_IC = split_pose(T_HB)
         agent_state = hs.agent.AgentState(t_IC, q_IC)
+        # print("Set agent pose (x,y,z,w):", q_IC)
         self.sim.get_agent(0).set_state(agent_state)
         # Render the sensor observations.
         observation = sim.get_sensor_observations()
@@ -768,6 +772,7 @@ class HabitatROSNode:
         with open(groundtruth_txt, "a") as f:
             # T_PH = find_tf(self.tf_buffer, self.config["pose_frame_id"], "habitat")
             t_PC, q_PC = split_pose(obs["T_HB"] @ self._T_BCtum)
+            # t_PC, q_PC = split_pose(obs["T_HB"])
             f.write("{} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f}\n".format(
                 stamp_str, t_PC[0], t_PC[1], t_PC[2],
                 q_PC.x, q_PC.y, q_PC.z, q_PC.w))
