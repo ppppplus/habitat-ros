@@ -26,7 +26,7 @@ Config = Dict[str, Any]
 def read_config(config: Config) -> Config:
     new_config = config.copy()
     for name, val in config.items():
-        new_config[name] = rospy.get_param("~habitat_mav_sim/" + name, val)
+        new_config[name] = rospy.get_param("~" + name, val)
     return new_config
 
 def print_config(config: Config) -> None:
@@ -164,16 +164,13 @@ def find_tf(tf_buffer: tf2_ros.Buffer, from_frame: str, to_frame: str) -> Union[
 
 
 class SimpleMAVSimNode:
-    # Published topic names
-    _pose_topic = "~pose"
-    # Subscribed topic names
-    _goal_path_topic = "~goal_path"
-    _init_pose_topic = "/habitat/pose"
     _default_config = {
             "a_max": [1.0, 1.0, 0.5],
             "w_max": [0.1, 0.1, 0.05],
             "sim_freq": 60,
-            "world_frame_id": "habitat"}
+            "world_frame_id": "world",
+            "pose_frame_id": "base_link",
+            "robot_name": "robot1"}
 
 
 
@@ -191,16 +188,21 @@ class SimpleMAVSimNode:
         self._start_T_WB_time = rospy.get_time()
         self._goal_T_WBs = deque()
         # Initialize the pose from the habitat node
-        print("Waiting for initial pose from: "+self._init_pose_topic)
-        T_FB_msg = rospy.wait_for_message(self._init_pose_topic, PoseStamped)   # frame_id为world
+        # Published topic names
+        self.pose_topic = "external_pose"
+        # Subscribed topic names
+        self.goal_path_topic = "teleop/command"
+        self.init_pose_topic = "pose"
+        print("Waiting for initial pose from: "+self._config["robot_name"]+"/"+self.init_pose_topic)
+        T_FB_msg = rospy.wait_for_message(self.init_pose_topic, PoseStamped)   # frame_id为world
         # print("Trying to find transform from frame " + self._config["world_frame_id"] + " to frame " + T_FB_msg.header.frame_id )
         # T_WF = find_tf(self.tf_buffer, self._config["world_frame_id"], T_FB_msg.header.frame_id)
         T_FB = msg_to_pose(T_FB_msg.pose)
         self._T_WB = T_FB
         self._start_T_WB = self._T_WB
         # Setup publishers and subscribers
-        self._pub = rospy.Publisher(self._pose_topic, PoseStamped, queue_size=10)
-        rospy.Subscriber(self._goal_path_topic, Path, self._path_callback)
+        self._pub = rospy.Publisher(self.pose_topic, PoseStamped, queue_size=10)
+        rospy.Subscriber(self.goal_path_topic, Path, self._path_callback)
         # Main loop
         rospy.loginfo("Simple MAV simulator ready")
         if self._config["sim_freq"] > 0:
@@ -220,18 +222,18 @@ class SimpleMAVSimNode:
             return
         # Transform the pose to the correct frame
         # print("Trying to find transform from frame {} to frame {}".format(path.header.frame_id, self._config["world_frame_id"]))
-        T_WF = find_tf(self.tf_buffer, path.header.frame_id, self._config["world_frame_id"])
+        # T_WF = find_tf(self.tf_buffer, path.header.frame_id, self._config["world_frame_id"])
         self._pose_mutex.acquire()
         # Set the current and start poses to the first path vertex
         first_T_FB = msg_to_pose(path.poses[0].pose)
-        self._T_WB = T_WF @ first_T_FB
+        self._T_WB = first_T_FB
         self._start_T_WB = self._T_WB
         self._start_T_WB_time = rospy.get_time()
         # Clear the queue of any previous paths and add the goal poses
         self._goal_T_WBs.clear()
         for i in range(1, len(path.poses)):
             T_FB = msg_to_pose(path.poses[i].pose)
-            self._goal_T_WBs.append(T_WF @ T_FB)
+            self._goal_T_WBs.append(T_FB)
         self._pose_mutex.release()
 
 
@@ -279,7 +281,7 @@ class SimpleMAVSimNode:
         # Populate the message fields
         msg = PoseStamped()
         msg.header.stamp = rospy.get_rostime()
-        msg.header.frame_id = self._config["world_frame_id"]
+        msg.header.frame_id = self._config["robot_name"] +  "/" + self._config["pose_frame_id"]
         msg.pose.position.x = position[0]
         msg.pose.position.y = position[1]
         msg.pose.position.z = position[2]

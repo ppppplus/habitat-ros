@@ -38,7 +38,7 @@ def read_config(config: Config) -> Config:
     namespace retain their initial values."""
     new_config = config.copy()
     for name, val in config.items():
-        new_config[name] = rospy.get_param("~habitat/" + name, val)
+        new_config[name] = rospy.get_param("~" + name, val)
     return new_config
 
 def print_config(config: Config) -> None:
@@ -161,6 +161,7 @@ def get_instance_id(o: hs.scene.SemanticObject) -> int:
 
 
 class HabitatROSNode:
+    # This is a node for 1 agent
     # Matterport3D class RGB colors
     class_colors = np.array([
         [0xff, 0xff, 0xff],
@@ -209,16 +210,6 @@ class HabitatROSNode:
     # Instantiate a single CvBridge object for all conversions
     _bridge = CvBridge()
 
-    # Published topic names
-    _rgb_topic_name = "rgb/"
-    _depth_topic_name = "depth/"
-    _sem_class_topic_name = "semantic_class/"
-    _sem_instance_topic_name = "semantic_instance/"
-    _habitat_pose_topic_name = "~pose"
-
-    # Subscribed topic names
-    _external_pose_topic_name = "~external_pose"
-
     # Transforms between the internal habitat frame I (y-up) and the exported
     # habitat frame H (z-up)
     _T_HI = np.identity(4)
@@ -263,7 +254,19 @@ class HabitatROSNode:
     def __init__(self):
         # Initialize the node, habitat-sim and publishers
         rospy.init_node("habitat")
+
         self.config = self._read_node_config()
+        ### 
+        # Published topic names
+        self.rgb_topic_name = "rgb/"
+        self.depth_topic_name = "depth/"
+        self.sem_class_topic_name = "semantic_class/"
+        self.sem_instance_topic_name = "semantic_instance/"
+        self.habitat_pose_topic_name = "pose"
+        # Subscribed topic names
+        self.external_pose_topic_name = "external_pose"
+        ### 
+        
         self.sim = self._init_habitat(self.config)
         self.pub = self._init_publishers(self.config)
         # Initialize the pose mutex
@@ -285,9 +288,9 @@ class HabitatROSNode:
         #     rospy.sleep(0.1)
         # Setup the external pose subscriber
         # print("subscribed to external pose topic: " + self._external_pose_topic_name)
-        rospy.Subscriber(self._external_pose_topic_name, PoseStamped,
+        rospy.Subscriber(self.external_pose_topic_name, PoseStamped,
                 self._pose_callback, queue_size=1)
-        rospy.loginfo("Habitat node ready")
+        rospy.loginfo("Habitat {} node ready".format(self.robot_name))
         # Main loop
         if self.config["fps"] > 0:
             rate = rospy.Rate(self.config["fps"])
@@ -329,9 +332,9 @@ class HabitatROSNode:
         config["initial_T_HB"] = T
         if config["recording_dir"]:
             config["recording_dir"] = os.path.expanduser(config["recording_dir"])
-        self._tf_frame_id = config["tf_frame_id"]
-        self._camera_frame_id = config["camera_frame_id"]
-        self._robot_name = config["robot_name"]
+        self.tf_frame_id = config["tf_frame_id"]
+        self.camera_frame_id = config["camera_frame_id"]
+        self.robot_name = config["robot_name"]
         rospy.loginfo("Habitat node parameters:")
         print_config(config)
         return config
@@ -394,10 +397,10 @@ class HabitatROSNode:
         # self.TF_pose.pose.orientation.w = q_HB.w
         # self.TF_pose.header.frame_id = config["pose_frame_id"]
         # self.TF_received = False
-        rospy.loginfo("Habitat initial t_HB (x,y,z):   {}, {}, {}".format(
-            t_HB[0], t_HB[1], t_HB[2]))
-        rospy.loginfo("Habitat initial q_HB (x,y,z,w): {}, {}, {}, {}".format(
-            q_HB.x, q_HB.y, q_HB.z, q_HB.w))
+        rospy.loginfo("Agent {} initial t_HB (x,y,z):   {}, {}, {}".format(
+            self.robot_name, t_HB[0], t_HB[1], t_HB[2]))
+        rospy.loginfo("Agent {} initial q_HB (x,y,z,w): {}, {}, {}, {}".format(
+            self.robot_name, q_HB.x, q_HB.y, q_HB.z, q_HB.w))
         return sim
 
 
@@ -481,30 +484,30 @@ class HabitatROSNode:
         image_queue_size = 10
         pub = {}
         # Pose publisher
-        pub["pose"] = rospy.Publisher(self._habitat_pose_topic_name, PoseStamped, queue_size=10)
+        pub["pose"] = rospy.Publisher(self.habitat_pose_topic_name, PoseStamped, queue_size=10)
         # Image publishers
-        pub["rgb"] = rospy.Publisher(self._robot_name+"/"+self._rgb_topic_name + "image_raw",
+        pub["rgb"] = rospy.Publisher(self.rgb_topic_name + "image_raw",
                 Image, queue_size=image_queue_size)
-        pub["depth"] = rospy.Publisher(self._robot_name+"/"+self._depth_topic_name + "image_raw",
+        pub["depth"] = rospy.Publisher(self.depth_topic_name + "image_raw",
                 Image, queue_size=image_queue_size)
         
         if config["enable_semantics"] and config["instance_to_class"].size > 0:
             # Only publish semantics if the scene contains semantics
-            pub["sem_class"] = rospy.Publisher(self._robot_name+"/"+self._sem_class_topic_name + "image_raw",
+            pub["sem_class"] = rospy.Publisher(self.sem_class_topic_name + "image_raw",
                     Image, queue_size=image_queue_size)
-            pub["sem_instance"] = rospy.Publisher(self._robot_name+"/"+self._sem_instance_topic_name + "image_raw",
+            pub["sem_instance"] = rospy.Publisher(self.sem_instance_topic_name + "image_raw",
                     Image, queue_size=image_queue_size)
             if config["visualize_semantics"]:
-                pub["sem_class_render"] = rospy.Publisher(self._robot_name+"/"+self._sem_class_topic_name + "image_color",
+                pub["sem_class_render"] = rospy.Publisher(self.sem_class_topic_name + "image_color",
                         Image, queue_size=image_queue_size)
-                pub["sem_instance_render"] = rospy.Publisher(self._sem_instance_topic_name + "image_color",
+                pub["sem_instance_render"] = rospy.Publisher(self.sem_instance_topic_name + "image_color",
                         Image, queue_size=image_queue_size)
         # Publish the camera info for each image topic
-        self.image_topics = [self._rgb_topic_name, self._depth_topic_name]
+        self.image_topics = [self.rgb_topic_name, self.depth_topic_name]
         if config["enable_semantics"] and config["instance_to_class"].size > 0:
-            self.image_topics += [self._sem_class_topic_name, self._sem_instance_topic_name]
+            self.image_topics += [self.sem_class_topic_name, self.sem_instance_topic_name]
         for topic in self.image_topics:
-            pub[topic + "_camera_info"] = rospy.Publisher(self._robot_name+"/"+topic + "camera_info",
+            pub[topic + "_camera_info"] = rospy.Publisher(topic + "camera_info",
                     CameraInfo, queue_size=1, latch=True)
         return pub
 
@@ -537,11 +540,9 @@ class HabitatROSNode:
         t = obs["pose_position"]
         q = obs["pose_orientation"]
         msg = TransformStamped()
-        msg.header.stamp = obs["timestamp"]  # 使用pose时间戳
-        # print(rospy.Time.now())
-        # msg.header.stamp = rospy.Time.now()  # 使用当前时间戳
-        msg.header.frame_id = self._tf_frame_id        # 父坐标系
-        msg.child_frame_id = self._robot_name + "/" + self.config["pose_frame_id"]         # 子坐标系
+        msg.header.stamp = obs["timestamp"]  
+        msg.header.frame_id = self.tf_frame_id        
+        msg.child_frame_id = self.robot_name + "/" + self.config["pose_frame_id"]        
 
         msg.transform.translation.x = t[0]
         msg.transform.translation.y = t[1]
@@ -551,9 +552,18 @@ class HabitatROSNode:
         msg.transform.rotation.z = q[2] 
         msg.transform.rotation.w = q[3]
 
+        ### camera_link 
+        msg2 = TransformStamped()
+        msg2.header.stamp = obs["timestamp"]
+        msg2.header.frame_id = self.robot_name + "/" + self.config["pose_frame_id"]          
+        msg2.child_frame_id = self.robot_name + "/" + self.config["camera_frame_id"]  
+        msg2.transform.rotation.w = 1.0
+        ###
         self.tf_publisher.sendTransform(msg)
+        self.tf_publisher.sendTransform(msg2)
+
         
-        # print("publish tf from {} to {}".format(self._tf_frame_id, self.config["pose_frame_id"]))
+        # print("publish tf from {} to {}".format(self.tf_frame_id, self.config["pose_frame_id"]))
         # print(t)
         # print(q)    
 
@@ -578,18 +588,18 @@ class HabitatROSNode:
         message."""
         # T_PH = find_tf(self.tf_buffer, self.config["pose_frame_id"], "habitat")
         # t_PB, q_PB = split_pose(T_PH @ observation["T_HB"])
-        t_PB, q_PB = split_pose(observation["T_HB"])
+        t_HB, q_HB = split_pose(observation["T_HB"])
 
         p = PoseStamped()
-        p.header.frame_id = self.config["pose_frame_id"]
+        p.header.frame_id = self.robot_name + "/" + self.config["pose_frame_id"]
         p.header.stamp = observation["timestamp"]
-        p.pose.position.x = t_PB[0]
-        p.pose.position.y = t_PB[1]
-        p.pose.position.z = t_PB[2]
-        p.pose.orientation.x = q_PB.x
-        p.pose.orientation.y = q_PB.y
-        p.pose.orientation.z = q_PB.z
-        p.pose.orientation.w = q_PB.w
+        p.pose.position.x = t_HB[0]
+        p.pose.position.y = t_HB[1]
+        p.pose.position.z = t_HB[2]
+        p.pose.orientation.x = q_HB.x
+        p.pose.orientation.y = q_HB.y
+        p.pose.orientation.z = q_HB.z
+        p.pose.orientation.w = q_HB.w
         return p
 
 
@@ -598,7 +608,7 @@ class HabitatROSNode:
         """Convert the RGB image from the observation to a ROS Image message."""
         msg = self._bridge.cv2_to_imgmsg(observation["rgb"], "rgb8")
         msg.header.stamp = observation["timestamp"]
-        msg.header.frame_id = self._robot_name + "/" + self._camera_frame_id
+        msg.header.frame_id = self.robot_name + "/" + self.camera_frame_id
         return msg
 
 
@@ -608,7 +618,7 @@ class HabitatROSNode:
         message."""
         msg = self._bridge.cv2_to_imgmsg(observation["depth"], "32FC1")
         msg.header.stamp = observation["timestamp"]
-        msg.header.frame_id = self._robot_name + "/" + self._camera_frame_id
+        msg.header.frame_id = self.robot_name + "/" + self.camera_frame_id
         return msg
 
 
@@ -662,7 +672,7 @@ class HabitatROSNode:
         # http://docs.ros.org/electric/api/sensor_msgs/html/msg/CameraInfo.html
         msg = CameraInfo()
         msg.header.stamp = observation["timestamp"]
-        msg.header.frame_id = self._robot_name + "/" + self._camera_frame_id
+        msg.header.frame_id = self.robot_name + "/" + self.camera_frame_id
         msg.width = config["width"]
         msg.height = config["height"]
         msg.K = config["K"].flatten().tolist()
@@ -762,8 +772,8 @@ class HabitatROSNode:
                 f.write("# ground truth trajectory\n")
                 f.write("# timestamp tx ty tz qx qy qz qw\n")
         with open(groundtruth_txt, "a") as f:
-            T_PH = find_tf(self.tf_buffer, self.config["pose_frame_id"], "habitat")
-            t_PC, q_PC = split_pose(T_PH @ obs["T_HB"] @ self._T_BCtum)
+            # T_PH = find_tf(self.tf_buffer, self.config["pose_frame_id"], "habitat")
+            t_PC, q_PC = split_pose(obs["T_HB"] @ self._T_BCtum)
             f.write("{} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f}\n".format(
                 stamp_str, t_PC[0], t_PC[1], t_PC[2],
                 q_PC.x, q_PC.y, q_PC.z, q_PC.w))

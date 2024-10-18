@@ -17,9 +17,9 @@ from typing import Tuple
 
 
 _node_name = "teleop"
-_pose_input_topic = "/teleop/pose"
+_pose_input_topic = "pose"
 _pose_input_topic_type = PoseStamped
-_output_topic = "/teleop/command"
+_output_topic = "teleop/command"
 _pose_output_topic_type = PoseStamped
 _path_output_topic_type = Path
 
@@ -185,9 +185,9 @@ def wait_for_key(window) -> Tuple[Movement, bool]:
 
 
 
-def print_waiting_for_pose(window) -> None:
+def print_waiting_for_pose(window, robot_name: str) -> None:
     window.clear()
-    window.addstr(1, 0, "Waiting for initial pose of type {} on topic {}".format(_pose_input_topic_type, _pose_input_topic))
+    window.addstr(1, 0, "Waiting for initial pose of type {} on topic {}".format(_pose_input_topic_type, robot_name+"/"+_pose_input_topic))
     window.refresh()
 
 
@@ -222,6 +222,7 @@ def main() -> None:
     # Initialize ROS
     rospy.init_node(_node_name)
     publish_path = rospy.get_param("~publish_path", True)
+    robot_name = rospy.get_param("~robot_name", "robot1")
     if publish_path:
         output_topic_type = _path_output_topic_type
     else:
@@ -232,7 +233,7 @@ def main() -> None:
     try:
         curses.noecho()
         # Wait for the initial pose
-        print_waiting_for_pose(window)
+        print_waiting_for_pose(window, robot_name)
         pose = init_pose(_pose_input_topic)
         # Main loop
         quit = False

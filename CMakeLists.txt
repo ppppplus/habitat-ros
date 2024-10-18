@@ -35,6 +35,6 @@ catkin_package(
 )
 
 catkin_install_python(
-    PROGRAMS habitat_node.py habitat_mav_sim_node.py
+    PROGRAMS scripts/habitat_node.py scripts/habitat_mav_sim_node.py
     DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
