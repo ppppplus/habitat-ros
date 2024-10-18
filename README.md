@@ -90,9 +90,9 @@ immediately moved there.
 | `allowed_classes`            | `List`  | Only class IDs present in this list will be present in the output images. All other object classes will have a class and instance ID of 0. Leave empty to return all the available classes. Having a non-empty list significantly impacts performance so its suggested to only use this option for debugging. |
 | `scene_file`                 | `str`   | The path to the .glb scene file to load. The path can be absolute, relative to the habitat\_ros package or it may start with `~` to indicate the home directory of the current user. |
 | `initial_T_HB`               | `List`  | The initial body pose. Can be a translation only `[tx, ty, tz]`, rotation only `[qx, qy, qz, qw]`, translation and rotation `[tx, ty, tz, qx, qy, qz, qw]` or the 16 elements of a homogeneous transformation matrix in row-major order. |
-| `pose_frame_id`              | `str`   | The ID of the frame for poses published in `/${robot_name}/pose`. |
 | `pose_frame_at_initial_T_HB` | `bool`  | Enable publishing a static transform so that the Pose frame (P) coincides with the initial T\_HB pose. This results in the initial published pose being the identity matrix. |
-| `tf_frame_id` | `str`  | The ID of the world coordinate system |
+| `world_frame_id`              | `str`   | The ID of the frame for poses published in `/${robot_name}/pose`. |
+| `base_frame_id` | `str`  | The ID of the robot base frame |
 | `camera_frame_id` | `str`  | The ID of the camera frame |
 | `visualize_semantics`        | `bool`  | Generate and publish visualizations of the semantic class and instance IDs. Useful for debugging. |
 | `recording_dir`              | `srt`   | Store the run as a dataset in the TUM RGB-D format in `recording_dir`. |

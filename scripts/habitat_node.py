@@ -241,9 +241,9 @@ class HabitatROSNode:
             "allowed_classes": [],
             "scene_file": "",
             "initial_T_HB": [],
-            "pose_frame_id": "world",
             "pose_frame_at_initial_T_HB": False,
-            "tf_frame_id": "",
+            "world_frame_id": "world",
+            "base_frame_id": "",
             "camera_frame_id": "",
             "robot_name": "",
             "visualize_semantics": False,
@@ -306,8 +306,6 @@ class HabitatROSNode:
                 # time.sleep(1.0/self.config["fps"])
                 rate.sleep()
 
-
-
     def _read_node_config(self) -> Config:
         """Read the node parameters, print them and return a dictionary."""
         # Read the parameters
@@ -332,7 +330,8 @@ class HabitatROSNode:
         config["initial_T_HB"] = T
         if config["recording_dir"]:
             config["recording_dir"] = os.path.expanduser(config["recording_dir"])
-        self.tf_frame_id = config["tf_frame_id"]
+        self.world_frame_id = config["world_frame_id"]
+        self.base_frame_id = config["base_frame_id"]
         self.camera_frame_id = config["camera_frame_id"]
         self.robot_name = config["robot_name"]
         rospy.loginfo("Habitat node parameters:")
@@ -541,8 +540,8 @@ class HabitatROSNode:
         q = obs["pose_orientation"]
         msg = TransformStamped()
         msg.header.stamp = obs["timestamp"]  
-        msg.header.frame_id = self.tf_frame_id        
-        msg.child_frame_id = self.robot_name + "/" + self.config["pose_frame_id"]        
+        msg.header.frame_id = self.world_frame_id        
+        msg.child_frame_id = self.robot_name + "/" + self.base_frame_id   
 
         msg.transform.translation.x = t[0]
         msg.transform.translation.y = t[1]
@@ -555,17 +554,12 @@ class HabitatROSNode:
         ### camera_link 
         msg2 = TransformStamped()
         msg2.header.stamp = obs["timestamp"]
-        msg2.header.frame_id = self.robot_name + "/" + self.config["pose_frame_id"]          
-        msg2.child_frame_id = self.robot_name + "/" + self.config["camera_frame_id"]  
+        msg2.header.frame_id = self.robot_name + "/" + self.base_frame_id          
+        msg2.child_frame_id = self.robot_name + "/" + self.camera_frame_id
         msg2.transform.rotation.w = 1.0
         ###
         self.tf_publisher.sendTransform(msg)
         self.tf_publisher.sendTransform(msg2)
-
-        
-        # print("publish tf from {} to {}".format(self.tf_frame_id, self.config["pose_frame_id"]))
-        # print(t)
-        # print(q)    
 
 
 
@@ -591,7 +585,7 @@ class HabitatROSNode:
         t_HB, q_HB = split_pose(observation["T_HB"])
 
         p = PoseStamped()
-        p.header.frame_id = self.robot_name + "/" + self.config["pose_frame_id"]
+        p.header.frame_id = self.world_frame_id
         p.header.stamp = observation["timestamp"]
         p.pose.position.x = t_HB[0]
         p.pose.position.y = t_HB[1]

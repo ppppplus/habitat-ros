@@ -169,7 +169,7 @@ class SimpleMAVSimNode:
             "w_max": [0.1, 0.1, 0.05],
             "sim_freq": 60,
             "world_frame_id": "world",
-            "pose_frame_id": "base_link",
+            "base_frame_id": "base_link",
             "robot_name": "robot1"}
 
 
@@ -281,7 +281,7 @@ class SimpleMAVSimNode:
         # Populate the message fields
         msg = PoseStamped()
         msg.header.stamp = rospy.get_rostime()
-        msg.header.frame_id = self._config["robot_name"] +  "/" + self._config["pose_frame_id"]
+        msg.header.frame_id = self._config["robot_name"] +  "/" + self._config["base_frame_id"]
         msg.pose.position.x = position[0]
         msg.pose.position.y = position[1]
         msg.pose.position.z = position[2]
