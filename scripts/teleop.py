@@ -27,9 +27,9 @@ _path_output_topic_type = Path
 
 class Movement:
     # All movement happens with respect to the body frame.
-    _x_step = 0.01 # metres, x-axis movement step
-    _y_step = 0.01 # metres, y-axis movement step
-    _z_step = 0.01 # metres, z-axis movement step
+    _x_step = 0.02 # metres, x-axis movement step
+    _y_step = 0.02 # metres, y-axis movement step
+    _z_step = 0.02 # metres, z-axis movement step
     _roll_step = 0.6 # degrees, roll rotation step
     _pitch_step = 0.6 # degrees, pitch rotation step
     _yaw_step = 0.6 # degrees, yaw rotation step

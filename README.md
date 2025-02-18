@@ -100,10 +100,8 @@ immediately moved there.
 
 ## Performance
 
-- Enabling the semantic class and instance publishing will reduce performance so
-  it is advised to keep them disabled if semantics are not needed.
-- Enabling semantic class and instance visualization publishing will reduce
-  performance even more so it is advised to keep them disabled if not needed.
+- Enabling the semantic class and instance publishing will reduce performance so it is advised to keep them disabled if semantics are not needed.
+- Enabling semantic class and instance visualization publishing will reduce performance even more so it is advised to keep them disabled if not needed.
 
 
 
