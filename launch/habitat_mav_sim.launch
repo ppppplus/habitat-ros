@@ -23,14 +23,14 @@
     
 
     <!-- Habitat-Sim teleoperation node -->
-    <!-- <node pkg="habitat_ros"
+    <node pkg="habitat_ros"
         type="teleop.py"
         name="teleop"
         clear_params="true"
         output="screen">
       <param name="publish_path" type="bool" value="$(arg publish_path)"/>
       <param name="robot_name" value="$(arg robot_name)" />
-    </node> -->
+    </node>
   </group>
 
   <!-- <include file="$(find habitat_ros)/launch/habitat.launch" pass_all_args="true"/> -->
